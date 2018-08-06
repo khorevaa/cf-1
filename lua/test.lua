@@ -36,17 +36,17 @@ local function UnpackTo(dir, rd)
         local containerID = container[1]
         local metaClasses
         if containerID == "9cd510cd-abfc-11d4-9434-004095e12fc7" then
-			metaClasses = container[2]
-		elseif containerID == "9fcd25a0-4822-11d4-9414-008048da11f9" then
-			metaClasses = container[2][2]
-		elseif containerID == "e3687481-0a87-462c-a166-9f34594f9bba" then
-			metaClasses = container[2]
-		elseif containerID == "9de14907-ec23-4a07-96f0-85521cb6b53b" then
-			metaClasses = container[2]
-		elseif containerID == "51f2d5d8-ea4d-4064-8892-82951750031e" then
-			metaClasses = container[2]
-		elseif containerID == "e68182ea-4237-4383-967f-90c1e3370bc7" then
-			metaClasses = container[2]
+            metaClasses = container[2]
+        elseif containerID == "9fcd25a0-4822-11d4-9414-008048da11f9" then
+            metaClasses = container[2][2]
+        elseif containerID == "e3687481-0a87-462c-a166-9f34594f9bba" then
+            metaClasses = container[2]
+        elseif containerID == "9de14907-ec23-4a07-96f0-85521cb6b53b" then
+            metaClasses = container[2]
+        elseif containerID == "51f2d5d8-ea4d-4064-8892-82951750031e" then
+            metaClasses = container[2]
+        elseif containerID == "e68182ea-4237-4383-967f-90c1e3370bc7" then
+            metaClasses = container[2]
         end
         if metaClasses then
             local metaClassesCount = tonumber(metaClasses[3], 10)
