@@ -6,11 +6,8 @@ local PageHeaderLen  = 2 + 9 + 9 + 9 + 2 -- CRLF + hex8byte_ + hex8byte_ + hex8b
 local RowHeaderLen   = 8 + 8 + 4         -- datetime + datetime + attr
 local Unknown4       = 4
 
-local null = setmetatable({}, {
-    __tostring = function ()
-        return "null"
-    end
-})
+local abc = require "abc"
+local null = abc.null
 
 local Module = {}
 
@@ -156,19 +153,19 @@ end
 
 function Reader:ReadPointers()
     local t = {}
-	local pageHeader = self:ReadPageHeader()
-	local fullSize = pageHeader.FullSize
-	local readSize = 0
+    local pageHeader = self:ReadPageHeader()
+    local fullSize = pageHeader.FullSize
+    local readSize = 0
     local size, data
     while pageHeader.NextPage ~= END do
         size = pageHeader.PageSize
         readSize = readSize + size
         data = self:Read(size)
         for i = 1, size, 4 do
-			t[#t+1] = getUInt32(data:byte(i,  i + 3))
+            t[#t+1] = getUInt32(data:byte(i,  i + 3))
         end
-		self:Seek(pageHeader.NextPage)
-		pageHeader = self:ReadPageHeader()
+        self:Seek(pageHeader.NextPage)
+        pageHeader = self:ReadPageHeader()
     end
     size = fullSize - readSize
     data = self:Read(size)
@@ -176,7 +173,7 @@ function Reader:ReadPointers()
         t[#t+1] = getUInt32(data:byte(i,  i + 3))
     end
     t.rd = self
-	return t
+    return t
 end
 
 local function iter(t, i)
@@ -206,11 +203,11 @@ function Module.ReadImage(rd)
         end,
         List = function ()
             local t = {}
-            local ID
+            local id
             for i = 1, #pointers, 3 do
                 rd:Seek(pointers[i])
-                ID = string.gsub(rd:ReadRowHeader().ID, "%z", "")
-                t[ID] = pointers[i+1]
+                id = string.gsub(rd:ReadRowHeader().ID, "%z", "")
+                t[id] = pointers[i+1]
             end
             return t
         end
@@ -221,8 +218,9 @@ function Module.Parse(s, beg)
     beg = beg or 1
     local pos = s:find('{', beg, true)
     if not pos then return nil end
-    local qt, lb, rb = ('"{}'):byte(1,3)
+    local qt, lb, rb, lf = ('"{}\n'):byte(1, 4)
     local skip, b = false, 0
+    if s:byte(pos) == lf then pos = pos + 1 end
     local function parse()
         beg = pos + 1
         pos = s:find('["{},]', pos + 1)
@@ -236,6 +234,7 @@ function Module.Parse(s, beg)
                     tree[#tree+1] = assert(parse())
                     pos = pos + 1
                     beg = pos + 1
+                    if s:byte(beg) == lf then beg = beg + 1 end
                 elseif b == rb then
                     if beg < pos then
                         tree[#tree+1] = s:sub(beg, pos - 1)
@@ -244,6 +243,7 @@ function Module.Parse(s, beg)
                 else -- ','
                     tree[#tree+1] = s:sub(beg, pos - 1)
                     beg = pos + 1
+                    if s:byte(beg) == lf then beg = beg + 1 end
                 end
             end
             pos = s:find('["{},]', pos + 1)
