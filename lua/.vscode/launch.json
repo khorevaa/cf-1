@@ -1,0 +1,15 @@
+{
+    // https://github.com/actboy168/vscode-lua-debug
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lua",
+            "request": "launch",
+            "name": "Launch",
+            "program": "${file}",
+            "luaRuntime": "5.3 64bit",
+            "stopOnEntry": false,
+            "consoleCoding": "utf8"
+        }
+    ]
+}
