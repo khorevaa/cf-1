@@ -20,9 +20,9 @@ local String = C('"' * ((P(1) - '"') + P'""' )^0 * '"') * Space
 local Base64 = C("#base64:" * (P(1) - '}')^0) * Space
 
 local List, Atom = V"List", V"Atom"
-Parser = Space * P{ List,
-    List = Ct(Atom * (P',' * Space * Atom)^0);
-    Atom = Base64 + Symbol + String + Open * List * Close;
+local Parser = Space * P {List,
+    List = Ct(Open * Atom * (P',' * Space * Atom)^0 * Close);
+    Atom = Base64 + Symbol + String + List + C("");
 }
 
 local function write(name, data)
@@ -40,13 +40,13 @@ local function UnpackTo(dir, rd)
     rd:Seek(list["root"])
     ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
     assert(ret)
-    local root = assert(cf.Parse(res:sub(4)))
+    local root = assert(Parser:match(res:sub(4)))
     -- conf
     local confID = root[2]
     rd:Seek(list[confID])
     ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
     assert(ret)
-    local conf = cf.Parse(res:sub(4))
+    local conf = Parser:match(res:sub(4))
     -- meta
     local containerCount = tonumber(conf[3], 10)
     for i = 4, containerCount+3 do
@@ -79,7 +79,7 @@ local function UnpackTo(dir, rd)
                         rd:Seek(list[documentID])
                         ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
                         assert(ret)
-                        local document = cf.Parse(res:sub(4))
+                        local document = Parser:match(res:sub(4))
                         local documentName = document[2][10][2][3]:sub(2,-2)
                         local documentDir = path.join(dir, "Documents", documentName)
                         fs.mkdir(path.ansi(documentDir))
@@ -134,7 +134,7 @@ local function UnpackTo(dir, rd)
                                     rd:Seek(list[formID])
                                     ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
                                     assert(ret)
-                                    local form = cf.Parse(res:sub(4))
+                                    local form = Parser:match(res:sub(4))
                                     local formName = form[2][2][2][3]:sub(2,-2)
                                     local formDir = path.join(documentDir, "ManagedForms", formName)
                                     fs.mkdir(path.ansi(formDir))
@@ -145,7 +145,7 @@ local function UnpackTo(dir, rd)
                                         assert(ret)
                                         local formBody = Parser:match(res:sub(4))
                                         if formBody then
-                                            write(path.ansi(formDir.."/Module.bsl"), formBody[1][3]:sub(2,-2))
+                                            write(path.ansi(formDir.."/Module.bsl"), formBody[3]:sub(2,-2))
                                         end
                                     end
                                 end
