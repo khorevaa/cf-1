@@ -103,6 +103,36 @@ local function UnpackTo(dir, rd)
                                 write(path.ansi(documentDir.."/ManagerModule.bsl"), res)
                             end
                         end
+                        -- ManagedForms
+                        local managedFormsDir = path.join(documentDir, "ManagedForms")
+                        fs.mkdir(path.ansi(managedFormsDir))
+                        local childrenCount = document[3]
+                        for x = 4, childrenCount+3 do
+                            if document[x][1] == "fb880e93-47d7-4127-9357-a20e69c17545" then
+                                local formList = document[x]
+                                local formCount = tonumber(formList[2], 10)
+                                for f = 3, formCount+2 do
+                                    local formID = formList[f]
+                                    rd:Seek(list[formID])
+                                    ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
+                                    assert(ret)
+                                    local form = cf.Parse(res:sub(4))
+                                    local formName = form[2][2][2][3]:sub(2,-2)
+                                    local formDir = path.join(documentDir, "ManagedForms", formName)
+                                    fs.mkdir(path.ansi(formDir))
+                                    local formBodyID = formID..".0"
+                                    if list[formBodyID] then
+                                        rd:Seek(list[formBodyID])
+                                        ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
+                                        assert(ret)
+                                        local formBody = cf.Parse(res:sub(4))
+                                        if formBody[3] then
+                                            write(path.ansi(formDir.."/Module.bsl"), formBody[3]:sub(2,-2))
+                                        end
+                                    end
+                                end
+                            end
+                        end
                     end
                 end
             end
