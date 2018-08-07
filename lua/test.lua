@@ -7,6 +7,24 @@ local fs = require "path.fs"
 
 local END = "\xFF\xFF\xFF\x7F"
 
+local lpeg = require "lpeg"
+local P, S = lpeg.P, lpeg.S
+local C, Ct = lpeg.C, lpeg.Ct
+local V = lpeg.V
+
+local Space = S(" \n\r")^0
+local Symbol = C((1 - S' \n\r"{},') ^ 1) * Space
+local Open = "{" * Space
+local Close = "}" * Space
+local String = C('"' * ((P(1) - '"') + P'""' )^0 * '"') * Space
+local Base64 = C("#base64:" * (P(1) - '}')^0) * Space
+
+local List, Atom = V"List", V"Atom"
+Parser = Space * P{ List,
+    List = Ct(Atom * (P',' * Space * Atom)^0);
+    Atom = Base64 + Symbol + String + Open * List * Close;
+}
+
 local function write(name, data)
     local file = assert(io.open(name, "wb"))
     file:write(data)
@@ -125,9 +143,9 @@ local function UnpackTo(dir, rd)
                                         rd:Seek(list[formBodyID])
                                         ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
                                         assert(ret)
-                                        local formBody = cf.Parse(res:sub(4))
-                                        if formBody[3] then
-                                            write(path.ansi(formDir.."/Module.bsl"), formBody[3]:sub(2,-2))
+                                        local formBody = Parser:match(res:sub(4))
+                                        if formBody then
+                                            write(path.ansi(formDir.."/Module.bsl"), formBody[1][3]:sub(2,-2))
                                         end
                                     end
                                 end
