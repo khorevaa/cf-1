@@ -65,8 +65,43 @@ local function UnpackTo(dir, rd)
                         local documentName = document[2][10][2][3]:sub(2,-2)
                         local documentDir = path.join(dir, "Documents", documentName)
                         fs.mkdir(path.ansi(documentDir))
-                        if list[documentID..".0"] then
-
+                        -- ObjectModule
+                        local objectModuleID = documentID..".0"
+                        if list[objectModuleID] then
+                            rd:Seek(list[objectModuleID])
+                            ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
+                            assert(ret)
+                            if res:sub(1,4) == END then
+                                local rd = cf.StringReader(res)
+                                local image = cf.ReadImage(rd)
+                                local list = image.List()
+                                if list["text"] then
+                                    rd:Seek(list["text"])
+                                    res = rd:ReadRowBody()
+                                    write(path.ansi(documentDir.."/ObjectModule.bsl"), res)
+                                end
+                            else
+                                write(path.ansi(documentDir.."/ObjectModule.bsl"), res)
+                            end
+                        end
+                        -- ManagerModule
+                        local managerModuleID = documentID..".2"
+                        if list[managerModuleID] then
+                            rd:Seek(list[managerModuleID])
+                            ret, res = pcall(miniz.inflate, rd:ReadRowBody(), 0)
+                            assert(ret)
+                            if res:sub(1,4) == END then
+                                local rd = cf.StringReader(res)
+                                local image = cf.ReadImage(rd)
+                                local list = image.List()
+                                if list["text"] then
+                                    rd:Seek(list["text"])
+                                    res = rd:ReadRowBody()
+                                    write(path.ansi(documentDir.."/ManagerModule.bsl"), res)
+                                end
+                            else
+                                write(path.ansi(documentDir.."/ManagerModule.bsl"), res)
+                            end
                         end
                     end
                 end
